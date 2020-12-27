@@ -6,7 +6,6 @@ interface Request {
   value: number;
   type: 'income' | 'outcome';
 }
-
 class CreateTransactionService {
   private transactionsRepository: TransactionsRepository;
 
@@ -15,20 +14,20 @@ class CreateTransactionService {
   }
 
   public execute({ title, value, type }: Request): Transaction {
-    if (!['income', 'outcome'].includes(type)) {
-      throw new Error('Transaction type is invalid');
-    }
-
     const { total } = this.transactionsRepository.getBalance();
 
-    if (type === 'outcome' && total < value) {
-      throw new Error('You do not have enough balance');
+    if(type !== 'income' && type !== 'outcome') {
+      throw Error('This type is not allowed');
+    }
+
+    if(type === 'outcome' && value > total) {
+      throw Error('You dont have this amount for withdrawal');
     }
 
     const transaction = this.transactionsRepository.create({
       title,
       value,
-      type,
+      type
     });
 
     return transaction;

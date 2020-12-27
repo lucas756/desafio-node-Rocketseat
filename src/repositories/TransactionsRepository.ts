@@ -1,5 +1,4 @@
 import Transaction from '../models/Transaction';
-import CreateTransactionService from '../services/CreateTransactionService';
 
 interface Balance {
   income: number;
@@ -11,6 +10,10 @@ interface CreateTransactionDTO {
   title: string;
   value: number;
   type: 'income' | 'outcome';
+}
+
+interface Response {
+  transactions: Transaction[];
 }
 
 class TransactionsRepository {
@@ -25,20 +28,17 @@ class TransactionsRepository {
   }
 
   public getBalance(): Balance {
-    const { income, outcome } = this.transactions.reduce(
-      (accumulator, transaction) => {
-        switch (transaction.type) {
-          case 'income':
-            accumulator.income += transaction.value;
-            break;
-          case 'outcome':
-            accumulator.outcome += transaction.value;
-            break;
-          default:
-            break;
+    const balance = this.transactions.reduce(
+      (increment: Balance, transaction: Transaction) => {
+        if (transaction.type === 'income') {
+          increment.income += transaction.value;
+          increment.total += transaction.value;
+        } else {
+          increment.outcome += transaction.value;
+          increment.total -= transaction.value;
         }
 
-        return accumulator;
+        return increment;
       },
       {
         income: 0,
@@ -47,17 +47,11 @@ class TransactionsRepository {
       },
     );
 
-    const total = income - outcome;
-
-    return { income, outcome, total };
+    return balance;
   }
 
   public create({ title, value, type }: CreateTransactionDTO): Transaction {
-    const transaction = new Transaction({
-      title,
-      value,
-      type,
-    });
+    const transaction = new Transaction({ title, value, type });
 
     this.transactions.push(transaction);
 
